@@ -562,7 +562,7 @@ static const uint16_t usRangeTableB[] = {0x0000,0x0000,0x0000,0x0000,0x0000,0x00
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-#if defined (__MACH__) || defined( __LINUX__ ) || defined( __MCUXPRESSO ) || defined(_WIN64)
+#if defined( JPEGDEC_NO_ARDUINO ) || defined (__MACH__) || defined( __LINUX__ ) || defined( __MCUXPRESSO ) || defined(_WIN64)
 //
 // API for C
 //
@@ -584,6 +584,7 @@ int JPEG_openRAM(JPEGIMAGE *pJPEG, uint8_t *pData, int iDataSize, JPEG_DRAW_CALL
     pJPEG->iMaxMCUs = 1000; // set to an unnaturally high value to start
     return JPEGInit(pJPEG);
 } /* JPEG_openRAM() */
+#if defined (__MACH__) || defined( __LINUX__ ) || defined( __MCUXPRESSO ) || defined(_WIN64)
 //
 // File initialization
 //
@@ -605,6 +606,7 @@ int JPEG_openFile(JPEGIMAGE *pJPEG, const char *szFilename, JPEG_DRAW_CALLBACK *
     fseek((FILE *)pJPEG->JPEGFile.fHandle, 0, SEEK_SET);
     return JPEGInit(pJPEG);
 } /* JPEG_openFile() */
+#endif
 
 int JPEG_getLastError(JPEGIMAGE *pJPEG)
 {
