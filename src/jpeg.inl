@@ -1909,18 +1909,22 @@ static int JPEGDecodeMCU_P(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
     unsigned short *pFast;
     uint32_t usHuff; // this prevents an unnecessary & 65535 for shorts
     signed int iPositive, iNegative, iCoeff;
-    signed short *pMCU = &pJPEG->sMCUs[iMCU]; // no support for skipped "P" blocks, so just decode as usual
+    signed short sSkipMCU[DCTSIZE]; // discarded coefficients of a skipped block
+    signed short *pMCU;
     uint32_t ulBitOff;
     my_ulong ulCode, ulBits, ulTemp; // local copies to allow compiler to use register vars
     uint8_t *pBuf;
 
+    if (iMCU < 0) { // skip this block (grayscale output from color): parse, don't store
+        memset(sSkipMCU, 0, sizeof(sSkipMCU));
+        pMCU = sSkipMCU;
+    } else {
+        pMCU = &pJPEG->sMCUs[iMCU & 0xffffff];
+    }
     ulBitOff = pJPEG->bb.ulBitOff;
     ulBits = pJPEG->bb.ulBits;
     pBuf = pJPEG->bb.pBuf;
     
-    if (iMCU & 0x80000000) { // supposed to be skipped
-        pMCU = &pJPEG->sMCUs[0]; // the output will be generated, but ignored
-    }
     if (ulBitOff > (REGISTER_WIDTH-17)) { // need to get more data
         pBuf += (ulBitOff >> 3);
         ulBitOff &= 7;
