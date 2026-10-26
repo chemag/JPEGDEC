@@ -330,13 +330,33 @@ void JPEG_setMaxOutputSize(JPEGIMAGE *pJPEG, int iMaxMCUs);
 
 #ifndef MOTOLONG
 #ifdef ALLOWS_UNALIGNED
-#define INTELSHORT(p) (*(uint16_t *)p)
-#define INTELLONG(p) (*(uint32_t *)p)
-#define MOTOSHORT(p) __builtin_bswap16(*(uint16_t *)p)
+// memcpy compiles to a single load where unaligned access is allowed, but
+// avoids dereferencing a misaligned uint16_t/uint32_t/uint64_t pointer.
+static inline uint16_t jpegd_read_u16(const void *p)
+{
+    uint16_t u16;
+    memcpy(&u16, p, sizeof(u16));
+    return u16;
+}
+static inline uint32_t jpegd_read_u32(const void *p)
+{
+    uint32_t u32;
+    memcpy(&u32, p, sizeof(u32));
+    return u32;
+}
+static inline uint64_t jpegd_read_u64(const void *p)
+{
+    uint64_t u64;
+    memcpy(&u64, p, sizeof(u64));
+    return u64;
+}
+#define INTELSHORT(p) jpegd_read_u16(p)
+#define INTELLONG(p) jpegd_read_u32(p)
+#define MOTOSHORT(p) __builtin_bswap16(jpegd_read_u16(p))
 #if REGISTER_WIDTH == 64
-#define MOTOLONG(p) __builtin_bswap64(*(uint64_t *)p)
+#define MOTOLONG(p) __builtin_bswap64(jpegd_read_u64(p))
 #else
-#define MOTOLONG(p) __builtin_bswap32(*(uint32_t *)p)
+#define MOTOLONG(p) __builtin_bswap32(jpegd_read_u32(p))
 #endif
 #else
 // Due to unaligned memory causing an exception, we have to do these macros the slow way
