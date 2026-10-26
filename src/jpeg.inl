@@ -1696,6 +1696,10 @@ static int JPEGParseInfo(JPEGIMAGE *pPage, int bExtractThumb)
             // Do we need to seek first?
             if (iOffset >= JPEG_FILE_BUF_SIZE)
             {
+                if (iOffset - iBytesRead >= pPage->JPEGFile.iSize - iFilePos) { // segment runs past the end of the file
+                    pPage->iError = JPEG_DECODE_ERROR;
+                    return 0;
+                }
                 iFilePos += (iOffset - iBytesRead);
                 iOffset = 0;
                 (*pPage->pfnSeek)(&pPage->JPEGFile, iFilePos);
