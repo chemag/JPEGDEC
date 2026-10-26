@@ -1375,10 +1375,11 @@ static uint32_t TIFFLONG(unsigned char *p, int bMotorola)
 {
     uint32_t l;
 
+    // Widen each byte before shifting: an int product overflows for bytes >= 0x80
     if (bMotorola)
-        l = *p * 0x1000000 + *(p+1) * 0x10000 + *(p+2) * 0x100 + *(p+3); // big endian
+        l = ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) | ((uint32_t)p[2] << 8) | (uint32_t)p[3]; // big endian
     else
-        l = *p + *(p+1) * 0x100 + *(p+2) * 0x10000 + *(p+3) * 0x1000000; // little endian
+        l = (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24); // little endian
     return l;
 } /* TIFFLONG() */
 //
