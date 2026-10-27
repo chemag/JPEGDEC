@@ -5427,7 +5427,9 @@ static int DecodeJPEG(JPEGIMAGE *pJPEG)
 
     // Requested the Exif thumbnail
     if (pJPEG->ucMode == 0xc2) { // progressive mode - we only decode the first scan (DC values)
-        pJPEG->iOptions |= JPEG_SCALE_EIGHTH; // return 1/8 sized image
+        // return a 1/8 sized image, whatever scale was requested
+        pJPEG->iOptions &= ~(JPEG_SCALE_HALF | JPEG_SCALE_QUARTER);
+        pJPEG->iOptions |= JPEG_SCALE_EIGHTH;
     }
     if (pJPEG->iOptions & JPEG_EXIF_THUMBNAIL)
     {

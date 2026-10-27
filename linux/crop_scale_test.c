@@ -190,10 +190,14 @@ int main(void) {
                   kZebra[r][1], kZebra[r][2], kZebra[r][3]);
     }
   }
-  for (r = 0; r < sizeof(kProgressive) / sizeof(kProgressive[0]); r++) {
-    ok &= Check("progressive", progressive_test_image,
-                (int)sizeof(progressive_test_image), 0, kProgressive[r][0],
-                kProgressive[r][1], kProgressive[r][2], kProgressive[r][3]);
+  /* Progressive images decode at 1/8 whatever scale is requested. */
+  for (o = 0; o < sizeof(kOptions) / sizeof(kOptions[0]); o++) {
+    for (r = 0; r < sizeof(kProgressive) / sizeof(kProgressive[0]); r++) {
+      ok &= Check("progressive", progressive_test_image,
+                  (int)sizeof(progressive_test_image), kOptions[o],
+                  kProgressive[r][0], kProgressive[r][1], kProgressive[r][2],
+                  kProgressive[r][3]);
+    }
   }
   if (!ok) return 1;
   printf("Cropped and scaled output matches the scaled whole image\n");
