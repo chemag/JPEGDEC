@@ -1963,12 +1963,31 @@ static int JPEGParseInfo(JPEGIMAGE *pPage, int bExtractThumb)
             case 0xffdb: /* M_DQT */
                 /* Get the quantization tables */
                 /* first byte has PPPPNNNN where P = precision and N = table number 0-3 */
+                if (usLen < 2) // too short to hold its own length
+                {
+                    pPage->iError = JPEG_DECODE_ERROR;
+                    return 0;
+                }
                 iOffset += 2; // skip length
                 usLen -= 2; // subtract length length
                 while (usLen > 0 && usLen < 32768) // don't let it wrap around to negative values
                 {
+                    int iTableLen;
+                    if (iOffset >= iBytesRead) // table starts past the buffered data
+                    {
+                        pPage->iError = JPEG_DECODE_ERROR;
+                        return 0;
+                    }
                     ucTable = s[iOffset++]; // table number
                     if ((ucTable & 0xf) > 3) // invalid table number
+                    {
+                        pPage->iError = JPEG_DECODE_ERROR;
+                        return 0;
+                    }
+                    iTableLen = (ucTable & 0xf0) ? JPEGD_DCT_SIZE*2 : JPEGD_DCT_SIZE;
+                    // usLen is unsigned: a table longer than the rest of the segment would
+                    // wrap it and keep the loop reading past the segment and the buffer
+                    if (usLen < iTableLen + 1 || iOffset + iTableLen > iBytesRead)
                     {
                         pPage->iError = JPEG_DECODE_ERROR;
                         return 0;
