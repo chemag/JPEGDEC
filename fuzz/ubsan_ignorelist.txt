@@ -1,0 +1,8 @@
+# Signed overflow that fuzzing builds deliberately ignore.
+#
+# JPEGIDCT() multiplies dequantized coefficients by fixed-point constants in
+# int. Corrupt coefficients or quantizer tables overflow those multiplies;
+# the result is garbage pixels for garbage input, and the IDCT is kept free of
+# range checks for speed. Every other signed overflow stays fatal.
+[signed-integer-overflow]
+fun:JPEGIDCT
