@@ -1197,6 +1197,8 @@ static int JPEGMakeHuffTables(JPEGIMAGE *pJPEG, int bThumbnail)
                 }
                 while (iLen)
                 {
+                    if (cc >= (1 << iBitNum)) // more codes than fit in iBitNum bits: corrupt table
+                        return 0;
                     //               if (iBitNum > 6) // do long table
                     if (iBitNum >= 5 && (cc >> (iBitNum-5)) == 0x1f) // first 5 bits are 1 - use long table
                     {
@@ -1283,6 +1285,8 @@ static int JPEGMakeHuffTables(JPEGIMAGE *pJPEG, int bThumbnail)
                 iLen = *pBits++; // get number of codes for this bit length
                 while (iLen)
                 {
+                    if (cc >= (1 << iBitNum)) // more codes than fit in iBitNum bits: corrupt table
+                        return 0;
                     if (iBitNum >= 6 && (cc >> (iBitNum-6)) == 0x3f) // first 6 bits are 1 - use long table
                     {
                         count = 16 - iBitNum;
