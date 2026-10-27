@@ -5611,7 +5611,7 @@ static int DecodeJPEG(JPEGIMAGE *pJPEG)
             }
 
             iSkipMask = 0; // assume not skipping
-            if (pJPEG->ucMode != 0xc2 && (bSkipRow || x*mcuCX < pJPEG->iCropX || x*mcuCX > pJPEG->iCropX+pJPEG->iCropCX)) {
+            if (pJPEG->ucMode != 0xc2 && (bSkipRow || x*mcuCX < pJPEG->iCropX || x*mcuCX >= pJPEG->iCropX+pJPEG->iCropCX)) {
                 iSkipMask = JPEGD_MCU_SKIP;
             }
             pJPEG->ucACTable = cACTable0;
