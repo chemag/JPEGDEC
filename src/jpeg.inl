@@ -5347,6 +5347,15 @@ static int DecodeJPEG(JPEGIMAGE *pJPEG)
         if (!JPEGParseInfo(pJPEG, 1)) // parse the embedded thumbnail file header
             return 0; // something went wrong
     }
+    // Only the first scan of a progressive image is decoded, and a valid first
+    // scan is an initial DC scan. The AC and refinement paths of
+    // JPEGDecodeMCU_P() do not work with the tables JPEGMakeHuffTables() builds.
+    if (pJPEG->ucMode == 0xc2 &&
+        (pJPEG->iScanStart != 0 || pJPEG->iScanEnd != 0 || pJPEG->cApproxBitsHigh != 0))
+    {
+        pJPEG->iError = JPEG_UNSUPPORTED_FEATURE;
+        return 0;
+    }
     // Fast downscaling options
     if (pJPEG->iOptions & JPEG_SCALE_HALF)
         iScaleShift = 1;
