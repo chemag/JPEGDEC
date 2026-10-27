@@ -925,6 +925,10 @@ void JPEGDEC_setCropArea(JPEGIMAGE *pJPEG, int x, int y, int w, int h)
         default: // to suppress compiler warning
             break;
     }
+    if (w < 1)
+        w = 1;
+    if (h < 1)
+        h = 1;
     if (w & (mcuCX-1)) {
         w &= ~(mcuCX-1);
         w += mcuCX;
@@ -935,10 +939,13 @@ void JPEGDEC_setCropArea(JPEGIMAGE *pJPEG, int x, int y, int w, int h)
     }
     if (x > pJPEG->iWidth-mcuCX) x = pJPEG->iWidth-mcuCX;
     if (y > pJPEG->iHeight-mcuCY) y = pJPEG->iHeight-mcuCY;
-    if (x + w > pJPEG->iWidth) w = pJPEG->iWidth - mcuCX;
-    if (y + h > pJPEG->iHeight) h = pJPEG->iHeight - mcuCY;
+    if (x < 0) x = 0; // image narrower or shorter than one MCU
+    if (y < 0) y = 0;
     x &= ~(mcuCX-1);
     y &= ~(mcuCY-1);
+    // keep the area inside the image, measured from the aligned origin
+    if (x + w > pJPEG->iWidth) w = pJPEG->iWidth - x;
+    if (y + h > pJPEG->iHeight) h = pJPEG->iHeight - y;
     pJPEG->iCropX = x; pJPEG->iCropY = y;
     pJPEG->iCropCX = w; pJPEG->iCropCY = h;
 } /* JPEGDEC_setCropArea() */
