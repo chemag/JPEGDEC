@@ -20,8 +20,8 @@ The three targets exercise the portable C API:
 * `jpegdec_header_fuzzer`: Image opening, JPEG/Exif header parsing, and
   metadata getters, including malformed and truncated input.
 * `jpegdec_decode_fuzzer`: RGB565 in both byte orders, RGB8888, grayscale,
-  block callbacks, unscaled framebuffer output, 1/2, 1/4, 1/8 scaling, and
-  crop areas on unscaled baseline images.
+  block callbacks and framebuffer output, 1/2, 1/4, 1/8 scaling, and crop
+  areas, with framebuffers sized as `JPEGDEC.h` documents.
 * `jpegdec_yuv_fuzzer`: Planar YUV420 and NV12, including padded pitches and
   odd image dimensions.
 
