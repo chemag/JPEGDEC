@@ -1904,9 +1904,17 @@ static int JPEGParseInfo(JPEGIMAGE *pPage, int bExtractThumb)
                             IFD = TIFFLONG(&s[iTIFF + IFD], bMotorola);
                             if (IFD != 0 && IFD <= (uint32_t)(iTIFFEnd - iTIFF - 2)) // Thumbnail present?
                             {
-                                pPage->ucHasThumb = 1;
                                 GetTIFFInfo(pPage, bMotorola, iTIFF + (int)IFD, iTIFFEnd); // info for second 'page' of TIFF
-                                pPage->iThumbData += iTIFF; // absolute offset in the file
+                                // the thumbnail lives in the APP1 segment
+                                if (pPage->iThumbData >= 0 && pPage->iThumbData < iTIFFEnd - iTIFF)
+                                {
+                                    pPage->ucHasThumb = 1;
+                                    pPage->iThumbData += iTIFF; // absolute offset in the file
+                                }
+                                else
+                                {
+                                    pPage->iThumbData = 0;
+                                }
                             }
                         }
                     }
