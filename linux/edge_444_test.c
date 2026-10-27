@@ -3,7 +3,10 @@
  *
  * Decode a 20-pixel-wide 4:4:4 image into an exactly sized framebuffer. The
  * last MCU column is clipped to 4 pixels; the SSE path used to store all 8
- * pixels of each row past the end of the line. Build with AddressSanitizer.
+ * pixels of each row past the end of the line, and the C path did not skip
+ * the unused luma samples, so rows after the first read the wrong row. Every
+ * block of the fixture is identical, so the clipped column must match the
+ * first 4 columns. Build with AddressSanitizer.
  */
 
 #include <stdint.h>
@@ -46,14 +49,48 @@ static uint8_t* Decode(int pixel_type, int bpp, int* width, int* height) {
   return framebuffer;
 }
 
+/* Columns 16..19 must equal columns 0..3 of the same row. */
+static int ClippedColumnMatches(const uint8_t* framebuffer, int bpp, int width,
+                                int height) {
+  int x, y, b;
+
+  for (y = 0; y < height; y++) {
+    const uint8_t* row = framebuffer + (size_t)y * width * bpp;
+    for (x = 0; x < 4; x++) {
+      for (b = 0; b < bpp; b++) {
+        if (row[(16 + x) * bpp + b] != row[x * bpp + b]) {
+          fprintf(stderr, "bpp %d: pixel (%d,%d) differs from (%d,%d)\n", bpp,
+                  16 + x, y, x, y);
+          return 0;
+        }
+      }
+    }
+  }
+  /* The rows differ, so a wrong-row read cannot match by accident. */
+  for (b = 0; b < bpp; b++) {
+    if (framebuffer[b] != framebuffer[(size_t)(height - 1) * width * bpp + b]) {
+      return 1;
+    }
+  }
+  fprintf(stderr, "fixture rows are identical\n");
+  return 0;
+}
+
 int main(void) {
   int width, height;
   uint8_t* rgb565 = Decode(JPEGD_PIXEL_RGB565_LE, 2, &width, &height);
   uint8_t* rgb8888 = Decode(JPEGD_PIXEL_RGB8888, 4, &width, &height);
-  int result = (rgb565 != NULL && rgb8888 != NULL) ? 0 : 1;
+  int result = 1;
+
+  if (rgb565 != NULL && rgb8888 != NULL &&
+      ClippedColumnMatches(rgb565, 2, width, height) &&
+      ClippedColumnMatches(rgb8888, 4, width, height)) {
+    result = 0;
+  }
 
   free(rgb565);
   free(rgb8888);
-  if (result == 0) printf("Clipped 4:4:4 MCUs stay within the framebuffer\n");
+  if (result == 0)
+    printf("Clipped 4:4:4 MCUs stay in bounds and use the right rows\n");
   return result;
 }

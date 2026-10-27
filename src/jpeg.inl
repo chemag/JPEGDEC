@@ -3816,7 +3816,7 @@ static void JPEGPutMCU11(JPEGIMAGE *pJPEG, int x, int iPitch)
                 Y = (int)(*pY++) << 12;
                 JPEGPixelLE(pOutput+iCol, Y, iCb, iCr);
             } // for col
-            pCr += delta; pCb += delta;
+            pCr += delta; pCb += delta; pY += delta;
         }
         else if (pJPEG->ucPixelType == JPEGD_PIXEL_RGB565_BE)
         {
@@ -3827,7 +3827,7 @@ static void JPEGPutMCU11(JPEGIMAGE *pJPEG, int x, int iPitch)
                 Y = (int)(*pY++) << 12;
                 JPEGPixelBE(pOutput+iCol, Y, iCb, iCr);
             } // for col
-            pCr += delta; pCb += delta;
+            pCr += delta; pCb += delta; pY += delta;
         } else { // RGB888
             for (iCol=0; iCol<w; iCol++) // up to 4x2 cols to do
             {
@@ -3836,7 +3836,7 @@ static void JPEGPutMCU11(JPEGIMAGE *pJPEG, int x, int iPitch)
                 Y = (int)(*pY++) << 12;
                 JPEGPixelRGB((uint32_t *)&pOutput[iCol*2], Y, iCb, iCr);
             } // for col
-            pCr += delta; pCb += delta;
+            pCr += delta; pCb += delta; pY += delta;
         }
         pOutput += (pJPEG->ucPixelType == JPEGD_PIXEL_RGB8888) ? iPitch*2 : iPitch;
     } // for row
