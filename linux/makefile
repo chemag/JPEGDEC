@@ -1,7 +1,7 @@
 CFLAGS=-D__LINUX__ -Wall -O2
 PORTABLE_FLAGS=-DJPEGDEC_NO_ARDUINO -DNO_SIMD -Wall -Wextra -Werror -O2
 ASAN_FLAGS=-fsanitize=address -fno-omit-frame-pointer -O1 -g -Werror=vla
-ALIGN_FLAGS=-fsanitize=alignment -fno-sanitize-recover=alignment -fno-omit-frame-pointer -O1 -g
+ALIGN_FLAGS=-DNO_SIMD -fsanitize=alignment -fno-sanitize-recover=alignment -fno-omit-frame-pointer -O1 -g
 SHIFT_FLAGS=-fsanitize=shift -fno-sanitize-recover=shift -fno-omit-frame-pointer -O1 -g
 OVERFLOW_FLAGS=-fsanitize=signed-integer-overflow -fno-sanitize-recover=signed-integer-overflow -fno-omit-frame-pointer -O1 -g
 LIBS=-lm -lpthread
@@ -34,6 +34,9 @@ rgb565_endian_test: rgb565_endian_test.o jpegdec_asan.o
 
 unaligned_read_test: unaligned_read_test.o jpegdec_align.o
 	$(CC) $(ALIGN_FLAGS) unaligned_read_test.o jpegdec_align.o $(LIBS) -o unaligned_read_test
+
+unaligned_output_test: unaligned_output_test.o jpegdec_align.o
+	$(CC) $(ALIGN_FLAGS) unaligned_output_test.o jpegdec_align.o $(LIBS) -o unaligned_output_test
 
 huffman_shift_test: huffman_shift_test.o jpegdec_shift.o
 	$(CC) $(SHIFT_FLAGS) huffman_shift_test.o jpegdec_shift.o $(LIBS) -o huffman_shift_test
@@ -70,6 +73,9 @@ rgb565_endian_test.o: rgb565_endian_test.c ../src/JPEGDEC.h ../test_images/tulip
 
 unaligned_read_test.o: unaligned_read_test.c progressive_test_image.h ../src/JPEGDEC.h ../test_images/tulips.h
 	$(CC) $(CFLAGS) $(ALIGN_FLAGS) -c unaligned_read_test.c
+
+unaligned_output_test.o: unaligned_output_test.c ../src/JPEGDEC.h ../test_images/tulips.h
+	$(CC) $(CFLAGS) $(ALIGN_FLAGS) -c unaligned_output_test.c
 
 huffman_shift_test.o: huffman_shift_test.c progressive_test_image.h ../src/JPEGDEC.h ../test_images/tulips.h ../test_images/zebra.h
 	$(CC) $(CFLAGS) $(SHIFT_FLAGS) -c huffman_shift_test.c
@@ -110,7 +116,7 @@ jpegdec_no_arduino.o: ../src/jpegdec.c ../src/jpeg.inl ../src/JPEGDEC.h
 JPEGDEC_no_arduino.o: ../src/JPEGDEC.cpp ../src/JPEGDEC.h
 	$(CXX) $(PORTABLE_FLAGS) -c ../src/JPEGDEC.cpp -o JPEGDEC_no_arduino.o
 
-test: c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420p_test nv12_test rgb565_endian_test unaligned_read_test huffman_shift_test exif_long_test huffman_table_id_test truncated_segment_test jpegdec_no_arduino.o JPEGDEC_no_arduino.o
+test: c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420p_test nv12_test rgb565_endian_test unaligned_read_test unaligned_output_test huffman_shift_test exif_long_test huffman_table_id_test truncated_segment_test jpegdec_no_arduino.o JPEGDEC_no_arduino.o
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./c_api_test
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./cpp_api_test
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./progressive_test
@@ -119,10 +125,11 @@ test: c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./nv12_test
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./rgb565_endian_test
 	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./unaligned_read_test
+	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./unaligned_output_test
 	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./huffman_shift_test
 	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./exif_long_test
 	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./huffman_table_id_test
 	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./truncated_segment_test
 
 clean:
-	rm -rf *.o libJPEGDEC.a c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420p_test nv12_test rgb565_endian_test unaligned_read_test huffman_shift_test exif_long_test huffman_table_id_test truncated_segment_test
+	rm -rf *.o libJPEGDEC.a c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420p_test nv12_test rgb565_endian_test unaligned_read_test unaligned_output_test huffman_shift_test exif_long_test huffman_table_id_test truncated_segment_test
