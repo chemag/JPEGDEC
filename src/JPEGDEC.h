@@ -283,7 +283,16 @@ int JPEGDEC_openFile(JPEGIMAGE *pJPEG, const char *szFilename, JPEG_DRAW_CALLBAC
 #endif
 int JPEGDEC_open(JPEGIMAGE *pJPEG, const char *szFilename, JPEG_OPEN_CALLBACK *pfnOpen, JPEG_CLOSE_CALLBACK *pfnClose, JPEG_READ_CALLBACK *pfnRead, JPEG_SEEK_CALLBACK *pfnSeek, JPEG_DRAW_CALLBACK *pfnDraw);
 int JPEGDEC_openHandle(JPEGIMAGE *pJPEG, void *fHandle, int iDataSize, JPEG_CLOSE_CALLBACK *pfnClose, JPEG_READ_CALLBACK *pfnRead, JPEG_SEEK_CALLBACK *pfnSeek, JPEG_DRAW_CALLBACK *pfnDraw);
+// Decode into pFramebuffer instead of calling the draw callback. Lines are
+// the output width apart: the crop width divided by the scale, rounded up.
+// Allocate whole MCUs (16x16 pixels before scaling) in both directions;
+// edge MCUs may be written in full.
 void JPEGDEC_setFramebuffer(JPEGIMAGE *pJPEG, void *pFramebuffer);
+// Set the area to decode, in source pixels. The origin is aligned down and
+// the size up to whole MCUs, then the area is limited to the image. Cropping
+// happens first: MCUs outside the area are not reconstructed, and the scale
+// option of decode() then applies to the area, so the output is the crop
+// size divided by the scale, rounded up. Progressive images decode at 1/8.
 void JPEGDEC_setCropArea(JPEGIMAGE *pJPEG, int x, int y, int w, int h);
 void JPEGDEC_getCropArea(JPEGIMAGE *pJPEG, int *x, int *y, int *w, int *h);
 int JPEGDEC_getWidth(JPEGIMAGE *pJPEG);
