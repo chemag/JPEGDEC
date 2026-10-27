@@ -3,8 +3,9 @@
  *
  * Check that RGB8888 output stores R, G, B, A in byte order, like the
  * reference C converter, and agrees with RGB565 output. The SSE 4:4:4 and
- * 4:2:0 converters used to store B and R swapped. Runs whichever converter
- * the build selects; the SIMD paths are taken for MCUs that are not clipped.
+ * 4:2:0 converters and the NEON 4:2:0 converter used to store B and R
+ * swapped. Runs whichever converter the build selects; the SIMD paths are
+ * taken for MCUs that are not clipped.
  */
 
 #include <stdint.h>
