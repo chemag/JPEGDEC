@@ -5807,8 +5807,8 @@ static int DecodeJPEG(JPEGIMAGE *pJPEG)
                 bContinue = (*pJPEG->pfnDraw)(&jd);
                 iDMAOffset ^= iDMASize; // toggle ping-pong offset
                 jd.x += iPitch;
-                if (pJPEG->iCropCX != (cx * mcuCX) && (iPitch + jd.x) > (pJPEG->iCropX + pJPEG->iCropCX)) { // image is cropped, don't go past end
-                    iPitch = pJPEG->iCropCX - (jd.x-pJPEG->iXOffset); // x=0 of output is really pJPEG->iCropx
+                if (pJPEG->iCropCX != (cx * mcuCX) && ((jd.x - pJPEG->iXOffset) + iPitch) > pJPEG->iCropCX) { // image is cropped, don't go past end
+                    iPitch = pJPEG->iCropCX - (jd.x-pJPEG->iXOffset); // jd.x - iXOffset is the output column
                 } else if ((cx - 1 - x) < iMCUCount) // change pitch for the last set of MCUs on this row
                     iPitch = (cx - 1 - x) * mcuCX;
                 xoff = 0;
