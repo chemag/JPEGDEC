@@ -3686,11 +3686,12 @@ static void JPEGPutMCU11(JPEGIMAGE *pJPEG, int x, int iPitch)
 #endif // ESP32S3_SIMD
 
 #ifdef HAS_SSE
-// SSE2 version
+// SSE2 version, which always stores 8 pixels per row
 // R = Y                + 1.40200 * Cr
 // G = Y - 0.34414 * Cb + 0.28586 * Cr - Cr
 // B = Y - 0.22800 * Cb + Cb + Cb
 
+ if (x + 8 <= iPitch) { // only for non-clipped MCUs
  if (pJPEG->ucPixelType == JPEGD_PIXEL_RGB8888) {
     __m128i mmxY, mmxCr, mmxCb, mmxTemp;
     __m128i mmxTemp2, mmxR, mmxG, mmxB;
@@ -3795,6 +3796,7 @@ static void JPEGPutMCU11(JPEGIMAGE *pJPEG, int x, int iPitch)
          } // for each row
      return;
      }
+ } // non-clipped MCU
 #endif // HAS_SSE
 
 // C reference version
