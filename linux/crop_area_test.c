@@ -57,6 +57,10 @@ static int Check(const char* name, const uint8_t* data, int size, int x, int y,
 }
 
 int main(void) {
+  /* 640x480 4:2:0: an area that ends inside the image, on an MCU boundary. */
+  if (!Check("tulips-inner", tulips, (int)sizeof(tulips), 320, 240, 160, 160)) {
+    return 1;
+  }
   /* 640x480 4:2:0: a request reaching past the bottom-right corner. */
   if (!Check("tulips", tulips, (int)sizeof(tulips), 630, 470, 640, 480) ||
       /* 8x8 4:2:0, smaller than one 16x16 MCU. */
