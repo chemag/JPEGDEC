@@ -5669,7 +5669,15 @@ static int DecodeJPEG(JPEGIMAGE *pJPEG)
             } // if there is a restart interval
             // See if we need to feed it more data
             if (pJPEG->iVLCOff >= FILE_HIGHWATER)
+            {
                 JPEGGetMoreData(pJPEG); // need more 'filtered' VLC data
+                // A refill resets the offset to 0. It cannot when the data is
+                // exhausted, and the bit reader would then walk past ucFileBuf.
+                if (pJPEG->iVLCOff > JPEG_FILE_BUF_SIZE - (int)sizeof(my_ulong))
+                {
+                    iErr = -1; // truncated or corrupt entropy-coded data
+                }
+            }
         } // for x
     } // for y
     if (iErr != 0)
