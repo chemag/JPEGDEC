@@ -1120,7 +1120,7 @@ static int JPEGMakeHuffTables_Slow(JPEGIMAGE *pJPEG, int bThumbnail)
                 while (iLen)
                 {
                     //               if (iBitNum > 6) // do long table
-                    if ((cc >> (iBitNum-5)) == 0x1f) // first 5 bits are 1 - use long table
+                    if (iBitNum >= 5 && (cc >> (iBitNum-5)) == 0x1f) // first 5 bits are 1 - use long table
                     {
                         count = iMaxLength - iBitNum;
                         codestart = cc << count;
@@ -1208,7 +1208,7 @@ static int JPEGMakeHuffTables_Slow(JPEGIMAGE *pJPEG, int bThumbnail)
                 iLen = *pBits++; // get number of codes for this bit length
                 while (iLen)
                 {
-                    if ((cc >> (iBitNum-4)) == 0xf) // first 4 bits are 1 - use long table
+                    if (iBitNum >= 4 && (cc >> (iBitNum-4)) == 0xf) // first 4 bits are 1 - use long table
                     {
                         count = 16 - iBitNum;
                         codestart = cc << count;
@@ -1311,7 +1311,7 @@ static int JPEGMakeHuffTables(JPEGIMAGE *pJPEG, int bThumbnail)
                 while (iLen)
                 {
                     //               if (iBitNum > 6) // do long table
-                    if ((cc >> (iBitNum-5)) == 0x1f) // first 5 bits are 1 - use long table
+                    if (iBitNum >= 5 && (cc >> (iBitNum-5)) == 0x1f) // first 5 bits are 1 - use long table
                     {
                         count = iMaxLength - iBitNum;
                         codestart = cc << count;
@@ -1396,7 +1396,7 @@ static int JPEGMakeHuffTables(JPEGIMAGE *pJPEG, int bThumbnail)
                 iLen = *pBits++; // get number of codes for this bit length
                 while (iLen)
                 {
-                    if ((cc >> (iBitNum-6)) == 0x3f) // first 6 bits are 1 - use long table
+                    if (iBitNum >= 6 && (cc >> (iBitNum-6)) == 0x3f) // first 6 bits are 1 - use long table
                     {
                         count = 16 - iBitNum;
                         codestart = cc << count;
