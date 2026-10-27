@@ -44,6 +44,9 @@ exif_long_test: exif_long_test.o jpegdec_overflow.o
 huffman_table_id_test: huffman_table_id_test.o jpegdec_shift.o
 	$(CC) $(SHIFT_FLAGS) huffman_table_id_test.o jpegdec_shift.o $(LIBS) -o huffman_table_id_test
 
+truncated_segment_test: truncated_segment_test.o jpegdec_overflow.o
+	$(CC) $(OVERFLOW_FLAGS) truncated_segment_test.o jpegdec_overflow.o $(LIBS) -o truncated_segment_test
+
 c_api_test.o: c_api_test.c ../src/JPEGDEC.h ../test_images/tulips.h
 	$(CC) $(CFLAGS) $(ASAN_FLAGS) -c c_api_test.c
 
@@ -77,6 +80,9 @@ exif_long_test.o: exif_long_test.c ../src/JPEGDEC.h ../test_images/tulips.h
 huffman_table_id_test.o: huffman_table_id_test.c ../src/JPEGDEC.h ../test_images/tulips.h
 	$(CC) $(CFLAGS) $(SHIFT_FLAGS) -c huffman_table_id_test.c
 
+truncated_segment_test.o: truncated_segment_test.c ../src/JPEGDEC.h
+	$(CC) $(CFLAGS) $(OVERFLOW_FLAGS) -c truncated_segment_test.c
+
 JPEGDEC.o: ../src/JPEGDEC.cpp ../src/JPEGDEC.h
 	$(CXX) $(CFLAGS) -c ../src/JPEGDEC.cpp
 
@@ -104,7 +110,7 @@ jpegdec_no_arduino.o: ../src/jpegdec.c ../src/jpeg.inl ../src/JPEGDEC.h
 JPEGDEC_no_arduino.o: ../src/JPEGDEC.cpp ../src/JPEGDEC.h
 	$(CXX) $(PORTABLE_FLAGS) -c ../src/JPEGDEC.cpp -o JPEGDEC_no_arduino.o
 
-test: c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420p_test nv12_test rgb565_endian_test unaligned_read_test huffman_shift_test exif_long_test huffman_table_id_test jpegdec_no_arduino.o JPEGDEC_no_arduino.o
+test: c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420p_test nv12_test rgb565_endian_test unaligned_read_test huffman_shift_test exif_long_test huffman_table_id_test truncated_segment_test jpegdec_no_arduino.o JPEGDEC_no_arduino.o
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./c_api_test
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./cpp_api_test
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./progressive_test
@@ -116,6 +122,7 @@ test: c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420
 	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./huffman_shift_test
 	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./exif_long_test
 	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./huffman_table_id_test
+	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./truncated_segment_test
 
 clean:
-	rm -rf *.o libJPEGDEC.a c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420p_test nv12_test rgb565_endian_test unaligned_read_test huffman_shift_test exif_long_test huffman_table_id_test
+	rm -rf *.o libJPEGDEC.a c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420p_test nv12_test rgb565_endian_test unaligned_read_test huffman_shift_test exif_long_test huffman_table_id_test truncated_segment_test
