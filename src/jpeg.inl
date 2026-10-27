@@ -3323,6 +3323,7 @@ static void JPEGPutMCU8BitGray(JPEGIMAGE *pJPEG, int x, int iPitch)
 static void JPEGPutMCUGray(JPEGIMAGE *pJPEG, int x, int iPitch)
 {
     uint16_t *usDest = (uint16_t *)&pJPEG->usPixels[x];
+    uint8_t *pDest32 = (uint8_t *)&pJPEG->usPixels[x*2]; // RGB8888 output, 4 bytes per pixel
     int i, j, xcount, ycount, delta;
     uint8_t *pSrc = (uint8_t *)&pJPEG->sMCUs[0];
     
@@ -3331,7 +3332,17 @@ static void JPEGPutMCUGray(JPEGIMAGE *pJPEG, int x, int iPitch)
         int pix;
         for (i=0; i<4; i++)
         {
-            if (pJPEG->ucPixelType == JPEGD_PIXEL_RGB565_LE)
+            if (pJPEG->ucPixelType == JPEGD_PIXEL_RGB8888)
+            {
+                for (j=0; j<4; j++)
+                {
+                    pix = (pSrc[0] + pSrc[1] + pSrc[8] + pSrc[9] + 2) >> 2; // average 2x2 block
+                    jpegd_write_u32(&pDest32[j*4], 0xff000000 | ((uint32_t)pix * 0x010101));
+                    pSrc += 2;
+                }
+                pDest32 += iPitch*4;
+            }
+            else if (pJPEG->ucPixelType == JPEGD_PIXEL_RGB565_LE)
             {
                 for (j=0; j<4; j++)
                 {
@@ -3368,7 +3379,13 @@ static void JPEGPutMCUGray(JPEGIMAGE *pJPEG, int x, int iPitch)
     }
     for (i=0; i<ycount; i++) // do up to 8 rows
     {
-        if (pJPEG->ucPixelType == JPEGD_PIXEL_RGB565_LE)
+        if (pJPEG->ucPixelType == JPEGD_PIXEL_RGB8888)
+        {
+            for (j=0; j<xcount; j++)
+                jpegd_write_u32(&pDest32[j*4], 0xff000000 | ((uint32_t)*pSrc++ * 0x010101));
+            pDest32 += iPitch*4;
+        }
+        else if (pJPEG->ucPixelType == JPEGD_PIXEL_RGB565_LE)
         {
             for (j=0; j<xcount; j++)
                 *usDest++ = usGrayTo565[*pSrc++];
