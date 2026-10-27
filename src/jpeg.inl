@@ -1903,6 +1903,12 @@ static int JPEGParseInfo(JPEGIMAGE *pPage, int bExtractThumb)
                 pPage->iCropCY = pPage->iHeight = jpegd_read_be16(&s[iOffset+3]);
                 pPage->iCropCX = pPage->iWidth = jpegd_read_be16(&s[iOffset+5]);
                 pPage->ucNumComponents = s[iOffset+7];
+                if (pPage->ucNumComponents == 0 || pPage->ucNumComponents > JPEGD_MAX_COMPONENTS_IN_SCAN)
+                {
+                    // JPCI[] holds at most 4 components (grayscale, YCbCr, CMYK)
+                    pPage->iError = (pPage->ucNumComponents == 0) ? JPEG_DECODE_ERROR : JPEG_UNSUPPORTED_FEATURE;
+                    return 0;
+                }
                 pPage->ucBpp = pPage->ucBpp * pPage->ucNumComponents; /* Bpp = number of components * bits per sample */
                 {
                     usLen -= 8;
