@@ -1,6 +1,7 @@
 CFLAGS=-D__LINUX__ -Wall -O2
 PORTABLE_FLAGS=-DJPEGDEC_NO_ARDUINO -DNO_SIMD -Wall -Wextra -Werror -O2
 ASAN_FLAGS=-fsanitize=address -fno-omit-frame-pointer -O1 -g -Werror=vla
+ALIGN_FLAGS=-fsanitize=alignment -fno-sanitize-recover=alignment -fno-omit-frame-pointer -O1 -g
 LIBS=-lm -lpthread
 
 all: libJPEGDEC.a
@@ -26,6 +27,9 @@ nv12_test: nv12_test.o jpegdec_asan.o
 rgb565_endian_test: rgb565_endian_test.o jpegdec_asan.o
 	$(CC) $(ASAN_FLAGS) rgb565_endian_test.o jpegdec_asan.o $(LIBS) -o rgb565_endian_test
 
+unaligned_read_test: unaligned_read_test.o jpegdec_align.o
+	$(CC) $(ALIGN_FLAGS) unaligned_read_test.o jpegdec_align.o $(LIBS) -o unaligned_read_test
+
 c_api_test.o: c_api_test.c ../src/JPEGDEC.h ../test_images/tulips.h
 	$(CC) $(CFLAGS) $(ASAN_FLAGS) -c c_api_test.c
 
@@ -44,6 +48,9 @@ nv12_test.o: nv12_test.c ../src/JPEGDEC.h ../test_images/tulips.h
 rgb565_endian_test.o: rgb565_endian_test.c ../src/JPEGDEC.h ../test_images/tulips.h ../test_images/zebra.h
 	$(CC) $(CFLAGS) $(ASAN_FLAGS) -c rgb565_endian_test.c
 
+unaligned_read_test.o: unaligned_read_test.c progressive_test_image.h ../src/JPEGDEC.h ../test_images/tulips.h
+	$(CC) $(CFLAGS) $(ALIGN_FLAGS) -c unaligned_read_test.c
+
 JPEGDEC.o: ../src/JPEGDEC.cpp ../src/JPEGDEC.h
 	$(CXX) $(CFLAGS) -c ../src/JPEGDEC.cpp
 
@@ -56,19 +63,23 @@ JPEGDEC_asan.o: ../src/JPEGDEC.cpp ../src/JPEGDEC.h
 jpegdec_asan.o: ../src/jpegdec.c ../src/jpeg.inl ../src/JPEGDEC.h
 	$(CC) $(CFLAGS) $(ASAN_FLAGS) -c ../src/jpegdec.c -o jpegdec_asan.o
 
+jpegdec_align.o: ../src/jpegdec.c ../src/jpeg.inl ../src/JPEGDEC.h
+	$(CC) $(CFLAGS) $(ALIGN_FLAGS) -c ../src/jpegdec.c -o jpegdec_align.o
+
 jpegdec_no_arduino.o: ../src/jpegdec.c ../src/jpeg.inl ../src/JPEGDEC.h
 	$(CC) $(PORTABLE_FLAGS) -c ../src/jpegdec.c -o jpegdec_no_arduino.o
 
 JPEGDEC_no_arduino.o: ../src/JPEGDEC.cpp ../src/JPEGDEC.h
 	$(CXX) $(PORTABLE_FLAGS) -c ../src/JPEGDEC.cpp -o JPEGDEC_no_arduino.o
 
-test: c_api_test cpp_api_test progressive_test yuv420p_test nv12_test rgb565_endian_test jpegdec_no_arduino.o JPEGDEC_no_arduino.o
+test: c_api_test cpp_api_test progressive_test yuv420p_test nv12_test rgb565_endian_test unaligned_read_test jpegdec_no_arduino.o JPEGDEC_no_arduino.o
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./c_api_test
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./cpp_api_test
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./progressive_test
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./yuv420p_test
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./nv12_test
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./rgb565_endian_test
+	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./unaligned_read_test
 
 clean:
-	rm -rf *.o libJPEGDEC.a c_api_test cpp_api_test progressive_test yuv420p_test nv12_test rgb565_endian_test
+	rm -rf *.o libJPEGDEC.a c_api_test cpp_api_test progressive_test yuv420p_test nv12_test rgb565_endian_test unaligned_read_test

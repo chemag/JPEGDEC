@@ -52,10 +52,14 @@
 #define JPEGD_ALLOWS_UNALIGNED
 #endif
 
+// memcpy compiles to a single load where unaligned access is allowed, but
+// avoids dereferencing a misaligned uint16_t/uint32_t/uint64_t pointer.
 static inline uint16_t jpegd_read_be16(const uint8_t *p)
 {
 #ifdef JPEGD_ALLOWS_UNALIGNED
-    return __builtin_bswap16(*(const uint16_t *)p);
+    uint16_t u16;
+    memcpy(&u16, p, sizeof(u16));
+    return __builtin_bswap16(u16);
 #else
     return ((uint16_t)p[0] << 8) | (uint16_t)p[1];
 #endif
@@ -65,9 +69,13 @@ static inline jpegd_word_t jpegd_read_be_word(const uint8_t *p)
 {
 #ifdef JPEGD_ALLOWS_UNALIGNED
 #if JPEGD_REGISTER_WIDTH == 64
-    return __builtin_bswap64(*(const uint64_t *)p);
+    uint64_t u64;
+    memcpy(&u64, p, sizeof(u64));
+    return __builtin_bswap64(u64);
 #else
-    return __builtin_bswap32(*(const uint32_t *)p);
+    uint32_t u32;
+    memcpy(&u32, p, sizeof(u32));
+    return __builtin_bswap32(u32);
 #endif
 #else
     return ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) |
