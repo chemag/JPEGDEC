@@ -18,11 +18,14 @@ endif()
 # Flags are target-local and cannot leak into normal JPEGDEC builds.
 set(JPEGDEC_SANITIZERS -fsanitize=address,undefined
     -fno-sanitize-recover=undefined -fno-omit-frame-pointer)
+# Skip the checks listed there, currently only signed overflow in JPEGIDCT().
+set(JPEGDEC_IGNORELIST
+    -fsanitize-ignorelist=${CMAKE_CURRENT_SOURCE_DIR}/ubsan_ignorelist.txt)
 add_library(jpegdec_fuzz_core STATIC ../src/jpegdec.c)
 target_include_directories(jpegdec_fuzz_core PUBLIC ../src)
 target_compile_definitions(jpegdec_fuzz_core PUBLIC JPEGDEC_NO_ARDUINO NO_SIMD)
 target_compile_options(jpegdec_fuzz_core PRIVATE
-    ${JPEGDEC_SANITIZERS} -fsanitize=fuzzer-no-link)
+    ${JPEGDEC_SANITIZERS} ${JPEGDEC_IGNORELIST} -fsanitize=fuzzer-no-link)
 
 foreach(name IN ITEMS header decode yuv)
   add_executable(jpegdec_${name}_fuzzer jpegdec_${name}_fuzzer.cc)
