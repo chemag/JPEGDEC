@@ -1043,6 +1043,8 @@ static int JPEGGetHuffTables(uint8_t *pBuf, int iLen, JPEGIMAGE *pJPEG)
         ucTable = pBuf[iOffset++]; // get table index
         if (ucTable & 0x10) // convert AC offset of 0x10 into offset of 4
             ucTable ^= 0x14;
+        if (ucTable > 7) // only DC and AC tables 0-3 exist
+            return -1;
         pJPEG->ucHuffTableUsed |= (1 << ucTable); // mark this table as being defined
         if (ucTable <= 7) // tables are 0-3, AC+DC
         {
