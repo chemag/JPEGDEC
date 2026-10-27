@@ -66,6 +66,9 @@ vlc_exhausted_test: vlc_exhausted_test.o jpegdec_asan.o
 dc_predictor_test: dc_predictor_test.o jpegdec_overflow.o
 	$(CC) $(OVERFLOW_FLAGS) dc_predictor_test.o jpegdec_overflow.o $(LIBS) -o dc_predictor_test
 
+quarter_rgb8888_test: quarter_rgb8888_test.o jpegdec_asan.o
+	$(CC) $(ASAN_FLAGS) quarter_rgb8888_test.o jpegdec_asan.o $(LIBS) -o quarter_rgb8888_test
+
 huffman_table_id_test: huffman_table_id_test.o jpegdec_shift.o
 	$(CC) $(SHIFT_FLAGS) huffman_table_id_test.o jpegdec_shift.o $(LIBS) -o huffman_table_id_test
 
@@ -132,6 +135,9 @@ vlc_exhausted_test.o: vlc_exhausted_test.c vlc_exhausted_image.h ../src/JPEGDEC.
 dc_predictor_test.o: dc_predictor_test.c dc_predictor_image.h ../src/JPEGDEC.h
 	$(CC) $(CFLAGS) $(OVERFLOW_FLAGS) -c dc_predictor_test.c
 
+quarter_rgb8888_test.o: quarter_rgb8888_test.c quarter_rgb8888_image.h ../src/JPEGDEC.h
+	$(CC) $(CFLAGS) $(ASAN_FLAGS) -c quarter_rgb8888_test.c
+
 huffman_table_id_test.o: huffman_table_id_test.c ../src/JPEGDEC.h ../test_images/tulips.h
 	$(CC) $(CFLAGS) $(SHIFT_FLAGS) -c huffman_table_id_test.c
 
@@ -174,7 +180,7 @@ jpegdec_no_arduino.o: ../src/jpegdec.c ../src/jpeg.inl ../src/JPEGDEC.h
 JPEGDEC_no_arduino.o: ../src/JPEGDEC.cpp ../src/JPEGDEC.h
 	$(CXX) $(PORTABLE_FLAGS) -c ../src/JPEGDEC.cpp -o JPEGDEC_no_arduino.o
 
-test: c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420p_test nv12_test rgb565_endian_test unaligned_read_test unaligned_output_test huffman_shift_test exif_long_test exif_ifd_test huffman_table_id_test truncated_segment_test component_count_test dqt_length_test huffman_table_index_test subsampling_test huffman_oversubscribed_test progressive_scan_test vlc_exhausted_test dc_predictor_test jpegdec_no_arduino.o JPEGDEC_no_arduino.o
+test: c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420p_test nv12_test rgb565_endian_test unaligned_read_test unaligned_output_test huffman_shift_test exif_long_test exif_ifd_test huffman_table_id_test truncated_segment_test component_count_test dqt_length_test huffman_table_index_test subsampling_test huffman_oversubscribed_test progressive_scan_test vlc_exhausted_test dc_predictor_test quarter_rgb8888_test jpegdec_no_arduino.o JPEGDEC_no_arduino.o
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./c_api_test
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./cpp_api_test
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./progressive_test
@@ -197,6 +203,7 @@ test: c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./progressive_scan_test
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./vlc_exhausted_test
 	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./dc_predictor_test
+	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./quarter_rgb8888_test
 
 clean:
-	rm -rf *.o libJPEGDEC.a c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420p_test nv12_test rgb565_endian_test unaligned_read_test unaligned_output_test huffman_shift_test exif_long_test exif_ifd_test huffman_table_id_test truncated_segment_test component_count_test dqt_length_test huffman_table_index_test subsampling_test huffman_oversubscribed_test progressive_scan_test vlc_exhausted_test dc_predictor_test
+	rm -rf *.o libJPEGDEC.a c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420p_test nv12_test rgb565_endian_test unaligned_read_test unaligned_output_test huffman_shift_test exif_long_test exif_ifd_test huffman_table_id_test truncated_segment_test component_count_test dqt_length_test huffman_table_index_test subsampling_test huffman_oversubscribed_test progressive_scan_test vlc_exhausted_test dc_predictor_test quarter_rgb8888_test
