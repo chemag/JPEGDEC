@@ -29,6 +29,17 @@ static inline void jpegd_write_u32(void *p, uint32_t u32)
     memcpy(p, &u32, sizeof(u32));
 }
 
+// Keep a DC predictor within int16. Valid 8-bit images stay within +/-2048,
+// but corrupt DC differences accumulate without bound, which overflows int
+// and the DC-only path's predictor * quantizer product.
+static inline void jpegd_clamp_dc(int *piDCPredictor)
+{
+    if (*piDCPredictor > 32767)
+        *piDCPredictor = 32767;
+    else if (*piDCPredictor < -32768)
+        *piDCPredictor = -32768;
+}
+
 #ifdef TEENSYDUINO
 #include "my_cm4_simd.h"
 //#define HAS_SIMD
@@ -2026,6 +2037,7 @@ static int JPEGDecodeMCU_P(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
             ulBitOff += ucHuff; // add bit length
             ulCode <<= pJPEG->cApproxBitsLow; // successive approximation shift value
             (*iDCPredictor) += ulCode;
+            jpegd_clamp_dc(iDCPredictor);
         }
         pMCU[0] = (short)*iDCPredictor; // store in MCU[0]
     }
@@ -2286,6 +2298,7 @@ static int JPEGDecodeMCU(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
         if (cCoeff)
         {
             (*iDCPredictor) += cCoeff;
+            jpegd_clamp_dc(iDCPredictor);
         }
         else
         {
@@ -2301,6 +2314,7 @@ static int JPEGDecodeMCU(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
             ulCode -= ulTemp>>(REGISTER_WIDTH-ucHuff);
             ulBitOff += ucHuff; // add bit length
             (*iDCPredictor) += (int)ulCode;
+            jpegd_clamp_dc(iDCPredictor);
         }
     }
     if (iMCU >= 0) { // non-skipped block
