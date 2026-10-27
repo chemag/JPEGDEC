@@ -20,9 +20,14 @@ The three targets exercise the portable C API:
 * `jpegdec_header_fuzzer`: Image opening, JPEG/Exif header parsing, and
   metadata getters, including malformed and truncated input.
 * `jpegdec_decode_fuzzer`: RGB565 in both byte orders, RGB8888, grayscale,
-  block callbacks, unscaled framebuffer output, and 1/2, 1/4, 1/8 scaling.
+  block callbacks, unscaled framebuffer output, 1/2, 1/4, 1/8 scaling, and
+  crop areas on unscaled baseline images.
 * `jpegdec_yuv_fuzzer`: Planar YUV420 and NV12, including padded pitches and
   odd image dimensions.
+
+`jpegdec_decode_simd_fuzzer` and `jpegdec_yuv_simd_fuzzer` run the same
+harnesses against a decoder built with the host SIMD code (SSE2 on x86, NEON
+on ARM) instead of `NO_SIMD`.
 
 The decoder and harnesses are instrumented with libFuzzer coverage,
 AddressSanitizer, and UndefinedBehaviorSanitizer. UBSan errors are fatal so
@@ -31,8 +36,9 @@ libFuzzer preserves reproducers. The one exception is listed in
 `JPEGIDCT()`, whose fixed-point multiplies overflow on corrupt coefficients
 and produce garbage pixels by design. Signed overflow anywhere else stays
 fatal. `NO_SIMD` selects the portable path used by constrained targets;
-architecture-specific SIMD and C++ wrappers are not covered. Deliberate
-unsigned arithmetic is not treated as undefined behavior.
+the `_simd` targets cover the SIMD path of the build host only, and the C++
+wrappers are not covered. Deliberate unsigned arithmetic is not treated as
+undefined behavior.
 
 # 2. Explicit build
 
