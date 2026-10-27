@@ -5477,10 +5477,9 @@ static int DecodeJPEG(JPEGIMAGE *pJPEG)
             iCb = JPEGD_MCU5;
             mcuCX = mcuCY = 16;
             break;
-        default: // to suppress compiler warning
-            cx = cy = 0;
-            iCr = iCb = 0;
-            break;
+        default: // unsupported sampling factors: the MCU size would be 0
+            pJPEG->iError = JPEG_UNSUPPORTED_FEATURE;
+            return 0;
     }
     // Scale down the MCUs by the requested amount
     mcuCX >>= iScaleShift;
