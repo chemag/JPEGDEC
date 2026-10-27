@@ -1300,6 +1300,8 @@ static int JPEGMakeHuffTables(JPEGIMAGE *pJPEG, int bThumbnail)
     {
         if (pJPEG->ucHuffTableUsed & (1 << iTable))
         {
+            if (iTable * JPEGD_DC_TABLE_SIZE >= (int)sizeof(pJPEG->ucHuffDC)) // only room for DC tables 0-1
+                return 0;
             //         pJPEG->huffdcFast[iTable] = (int *)PILIOAlloc(0x180); // short table = 128 bytes, long table = 256 bytes
             pucShort = &pJPEG->ucHuffDC[iTable*JPEGD_DC_TABLE_SIZE];
             //         pJPEG->huffdc[iTable] = pJPEG->huffdcFast[iTable] + 0x20; // 0x20 longs = 128 bytes
@@ -1307,8 +1309,6 @@ static int JPEGMakeHuffTables(JPEGIMAGE *pJPEG, int bThumbnail)
             pBits = &pHuffVals[iTable * JPEGD_HUFF_TABLE_LEN];
             p = pBits;
             p += 16; // point to bit data
-            if (iTable * JPEGD_DC_TABLE_SIZE >= (int)sizeof(pJPEG->ucHuffDC))
-                return 0; // table ID out of range
             cc = 0; // start with a code of 0
             for (iBitNum = 1; iBitNum <= 16; iBitNum++)
             {
@@ -5434,6 +5434,13 @@ static int DecodeJPEG(JPEGIMAGE *pJPEG)
     cACTable1 = pJPEG->JPCI[1].ac_tbl_no;
     cDCTable2 = pJPEG->JPCI[2].dc_tbl_no;
     cACTable2 = pJPEG->JPCI[2].ac_tbl_no;
+    // ucHuffDC and usHuffAC store tables 0-1 only; a scan may still select 2-3
+    if (cDCTable0 > 1 || cACTable0 > 1 || cDCTable1 > 1 || cACTable1 > 1 ||
+        cDCTable2 > 1 || cACTable2 > 1)
+    {
+        pJPEG->iError = JPEG_UNSUPPORTED_FEATURE;
+        return 0;
+    }
     iDCPred0 = iDCPred1 = iDCPred2 = mcuCX = mcuCY = 0;
     
     switch (pJPEG->ucSubSample) // set up the parameters for the different subsampling options
