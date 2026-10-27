@@ -45,12 +45,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   JPEGDEC_setMaxOutputSize(&image.jpeg,
                            1 + jpegdec_fuzz::Option(data, size, 2) % 8);
 
-  if ((jpegdec_fuzz::Option(data, size, 4) & 1) != 0 && scale == 0 &&
-      JPEGDEC_getJPEGType(&image.jpeg) != JPEG_MODE_PROGRESSIVE) {
-    // Crop to a rectangle chosen by four more trailer bytes; the decoder
-    // rounds it to whole MCUs. Crop areas are in source pixels and the
-    // decoder does not map them to scaled output (progressive images always
-    // decode at 1/8 scale), so only unscaled baseline decodes are cropped.
+  if ((jpegdec_fuzz::Option(data, size, 4) & 1) != 0) {
+    // Crop to a rectangle chosen by four more trailer bytes, in source
+    // pixels; the decoder aligns it to whole MCUs and applies the scale to
+    // the cropped area.
     const int width = image.jpeg.iWidth;
     const int height = image.jpeg.iHeight;
     JPEGDEC_setCropArea(&image.jpeg,
@@ -61,13 +59,21 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   }
 
   std::vector<uint8_t> framebuffer;
-  if ((jpegdec_fuzz::Option(data, size, 3) & 1) != 0 && scale == 0) {
-    // The framebuffer path writes complete MCU rows. Supply MCU-padded
-    // storage rather than treating required edge padding as a decoder bug.
+  if ((jpegdec_fuzz::Option(data, size, 3) & 1) != 0) {
+    // Size the framebuffer as JPEGDEC.h documents: the cropped area divided
+    // by the scale, in whole MCUs (16x16 source pixels).
+    int crop_x, crop_y, crop_w, crop_h;
+    JPEGDEC_getCropArea(&image.jpeg, &crop_x, &crop_y, &crop_w, &crop_h);
+    const int shift = JPEGDEC_getJPEGType(&image.jpeg) == JPEG_MODE_PROGRESSIVE
+                          ? 3
+                      : scale == JPEG_SCALE_HALF    ? 1
+                      : scale == JPEG_SCALE_QUARTER ? 2
+                      : scale == JPEG_SCALE_EIGHTH  ? 3
+                                                    : 0;
     const size_t width =
-        (static_cast<size_t>(image.jpeg.iWidth) + 15) & ~size_t(15);
+        ((static_cast<size_t>(crop_w) + 15) & ~size_t(15)) >> shift;
     const size_t height =
-        (static_cast<size_t>(image.jpeg.iHeight) + 15) & ~size_t(15);
+        ((static_cast<size_t>(crop_h) + 15) & ~size_t(15)) >> shift;
     const size_t bpp = format == JPEGD_PIXEL_RGB8888               ? 4
                        : format == JPEGD_PIXEL_EIGHT_BIT_GRAYSCALE ? 1
                                                                    : 2;
