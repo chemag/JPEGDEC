@@ -296,7 +296,16 @@ class JPEGDEC
 #else
 #define JPEG_STATIC
 int JPEG_openRAM(JPEGIMAGE *pJPEG, uint8_t *pData, int iDataSize, JPEG_DRAW_CALLBACK *pfnDraw);
+// Decode into pFramebuffer instead of calling the draw callback. Lines are
+// the output width apart: the crop width divided by the scale, rounded up.
+// Allocate whole MCUs (16x16 pixels before scaling) in both directions;
+// edge MCUs may be written in full.
 void JPEG_setFramebuffer(JPEGIMAGE *pJPEG, void *pFramebuffer);
+// Set the area to decode, in source pixels. The origin is aligned down and
+// the size up to whole MCUs, then the area is limited to the image. Cropping
+// happens first: MCUs outside the area are not reconstructed, and the scale
+// option of decode() then applies to the area, so the output is the crop
+// size divided by the scale, rounded up. Progressive images decode at 1/8.
 void JPEG_setCropArea(JPEGIMAGE *pJPEG, int x, int y, int w, int h);
 void JPEG_getCropArea(JPEGIMAGE *pJPEG, int *x, int *y, int *w, int *h);
 int JPEG_openFile(JPEGIMAGE *pJPEG, const char *szFilename, JPEG_DRAW_CALLBACK *pfnDraw);
