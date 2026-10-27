@@ -83,6 +83,13 @@ static inline jpegd_word_t jpegd_read_be_word(const uint8_t *p)
 #endif
 }
 
+// Store 4 bytes through memcpy: pixel destinations may be only 1- or 2-byte
+// aligned when the caller's framebuffer pitch is odd.
+static inline void jpegd_write_u32(void *p, uint32_t u32)
+{
+    memcpy(p, &u32, sizeof(u32));
+}
+
 #ifdef TEENSYDUINO
 #include "my_cm4_simd.h"
 //#define HAS_SIMD
@@ -3221,14 +3228,14 @@ static void JPEGPutMCU8BitGray(JPEGIMAGE *pJPEG, int x, int iPitch)
 #ifdef JPEGD_ALLOWS_UNALIGNED
         if (x + 16 <= iPitch) { // no cropping needed
             for (i=0; i<8; i++) {
-                *(uint32_t *)pDest = *(uint32_t *)pSrc; // Y0
-                *(uint32_t *)&pDest[4] = *(uint32_t *)&pSrc[4]; // Y0
-                *(uint32_t *)&pDest[8] = *(uint32_t *)&pSrc[128]; // Y1
-                *(uint32_t *)&pDest[12] = *(uint32_t *)&pSrc[132]; // Y1
-                *(uint32_t *)&pDest[iPitch*8] = *(uint32_t *)&pSrc[256]; // Y2
-                *(uint32_t *)&pDest[(iPitch*8)+4] = *(uint32_t *)&pSrc[260]; // Y2
-                *(uint32_t *)&pDest[(iPitch*8) + 8] = *(uint32_t *)&pSrc[384]; // Y3
-                *(uint32_t *)&pDest[(iPitch*8) + 12] = *(uint32_t *)&pSrc[388]; // Y3
+                memcpy(pDest, pSrc, 4); // Y0
+                memcpy(&pDest[4], &pSrc[4], 4); // Y0
+                memcpy(&pDest[8], &pSrc[128], 4); // Y1
+                memcpy(&pDest[12], &pSrc[132], 4); // Y1
+                memcpy(&pDest[iPitch*8], &pSrc[256], 4); // Y2
+                memcpy(&pDest[(iPitch*8)+4], &pSrc[260], 4); // Y2
+                memcpy(&pDest[(iPitch*8) + 8], &pSrc[384], 4); // Y3
+                memcpy(&pDest[(iPitch*8) + 12], &pSrc[388], 4); // Y3
                 pSrc += 8;
                 pDest += iPitch;
             }
@@ -3429,7 +3436,7 @@ static void JPEGPixel2LE(uint16_t *pDest, int iY1, int iY2, int iCb, int iCr)
     ulTmp2 = __SMLAD(5742, iCr, iY2) >> 15; // Red 2
     ulTmp = __USAT16(ulTmp | (ulTmp2 << 16), 5); // range limit both to 5 bits
     ulPixel1 |= (ulTmp << 11); // now we have R + G + B
-    *(uint32_t *)&pDest[0] = ulPixel1;
+    jpegd_write_u32(&pDest[0], ulPixel1);
 #else
     int iCBB, iCBG, iCRG, iCRR;
     iCBB = 7258  * (iCb-0x80);
@@ -3443,7 +3450,7 @@ static void JPEGPixel2LE(uint16_t *pDest, int iY1, int iY2, int iCb, int iCr)
     ulPixel2 = usRangeTableB[((iCBB + iY2) >> 12) & 0x3ff]; // blue pixel
     ulPixel2 |= usRangeTableG[((iCBG + iCRG + iY2) >> 12) & 0x3ff]; // green pixel
     ulPixel2 |= usRangeTableR[((iCRR + iY2) >> 12) & 0x3ff]; // red pixel
-    *(uint32_t *)&pDest[0] = (ulPixel1 | (ulPixel2<<16));
+    jpegd_write_u32(&pDest[0], ulPixel1 | (ulPixel2<<16));
 #endif
 } /* JPEGPixel2LE() */
 
@@ -3463,7 +3470,7 @@ static void JPEGPixel2BE(uint16_t *pDest, int32_t iY1, int32_t iY2, int32_t iCb,
     ulPixel2 = usRangeTableB[((iCBB + iY2) >> 12) & 0x3ff]; // blue pixel
     ulPixel2 |= usRangeTableG[((iCBG + iCRG + iY2) >> 12) & 0x3ff]; // green pixel
     ulPixel2 |= usRangeTableR[((iCRR + iY2) >> 12) & 0x3ff]; // red pixel
-    *(uint32_t *)&pDest[0] = __builtin_bswap16(ulPixel1) | ((uint32_t)__builtin_bswap16(ulPixel2)<<16);
+    jpegd_write_u32(&pDest[0], __builtin_bswap16(ulPixel1) | ((uint32_t)__builtin_bswap16(ulPixel2)<<16));
 } /* JPEGPixel2BE() */
 
 static void JPEGPixel2RGB(uint32_t *pDest, int32_t iY1, int32_t iY2, int32_t iCb, int32_t iCr)
