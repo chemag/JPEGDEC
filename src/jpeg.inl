@@ -5126,6 +5126,59 @@ static void JPEGPutMCU21(JPEGIMAGE *pJPEG, int x, int iPitch)
     }
 // Full size
     /* Convert YCC pixels into RGB pixels and store in output image */
+    if (x + 16 > iPitch) { // slower version with horizontal clipping
+        int iMaxCol = iPitch - x; // how many columns fit in the output
+        for (iRow=0; iRow<8; iRow++) { // up to 8 rows to do
+            for (iCol=0; iCol<4; iCol++) { // up to 4x2 cols to do
+                iCr = *pCr++; // left block
+                iCb = *pCb++;
+                Y1 = (signed int)(*pY++) << 12;
+                Y2 = (signed int)(*pY++) << 12;
+                if (iCol * 2 < iMaxCol) {
+                    if (iCol * 2 + 1 < iMaxCol) { // both pixels of the pair fit
+                        if (pJPEG->ucPixelType == JPEGD_PIXEL_RGB565_LE)
+                            JPEGPixel2LE(pOutput + iCol*2, Y1, Y2, iCb, iCr);
+                        else if (pJPEG->ucPixelType == JPEGD_PIXEL_RGB565_BE)
+                            JPEGPixel2BE(pOutput + iCol*2, Y1, Y2, iCb, iCr);
+                        else // JPEGD_PIXEL_RGB8888
+                            JPEGPixel2RGB((uint32_t *)&pOutput[iCol*4], Y1, Y2, iCb, iCr);
+                    } else { // only the left pixel of the pair fits
+                        if (pJPEG->ucPixelType == JPEGD_PIXEL_RGB565_LE)
+                            JPEGPixelLE(pOutput + iCol*2, Y1, iCb, iCr);
+                        else if (pJPEG->ucPixelType == JPEGD_PIXEL_RGB565_BE)
+                            JPEGPixelBE(pOutput + iCol*2, Y1, iCb, iCr);
+                        else // JPEGD_PIXEL_RGB8888
+                            JPEGPixelRGB((uint32_t *)&pOutput[iCol*4], Y1, iCb, iCr);
+                    }
+                }
+                if (iCol * 2 + 8 < iMaxCol) { // right block
+                    iCr = pCr[3];
+                    iCb = pCb[3];
+                    Y1 = (signed int)pY[126] << 12;
+                    Y2 = (signed int)pY[127] << 12;
+                    if (iCol * 2 + 9 < iMaxCol) { // both pixels of the pair fit
+                        if (pJPEG->ucPixelType == JPEGD_PIXEL_RGB565_LE)
+                            JPEGPixel2LE(pOutput + 8 + iCol*2, Y1, Y2, iCb, iCr);
+                        else if (pJPEG->ucPixelType == JPEGD_PIXEL_RGB565_BE)
+                            JPEGPixel2BE(pOutput + 8 + iCol*2, Y1, Y2, iCb, iCr);
+                        else // JPEGD_PIXEL_RGB8888
+                            JPEGPixel2RGB((uint32_t *)&pOutput[16 + iCol*4], Y1, Y2, iCb, iCr);
+                    } else { // only the left pixel of the pair fits
+                        if (pJPEG->ucPixelType == JPEGD_PIXEL_RGB565_LE)
+                            JPEGPixelLE(pOutput + 8 + iCol*2, Y1, iCb, iCr);
+                        else if (pJPEG->ucPixelType == JPEGD_PIXEL_RGB565_BE)
+                            JPEGPixelBE(pOutput + 8 + iCol*2, Y1, iCb, iCr);
+                        else // JPEGD_PIXEL_RGB8888
+                            JPEGPixelRGB((uint32_t *)&pOutput[16 + iCol*4], Y1, iCb, iCr);
+                    }
+                }
+            } // for col
+            pCb += 4;
+            pCr += 4;
+            pOutput += (pJPEG->ucPixelType == JPEGD_PIXEL_RGB8888) ? iPitch*2 : iPitch;
+        } // for row
+        return;
+    }
     for (iRow=0; iRow<8; iRow++) // up to 8 rows to do
     {
         for (iCol=0; iCol<4; iCol++) // up to 4x2 cols to do
