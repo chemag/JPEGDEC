@@ -60,6 +60,13 @@ The API:
 --------
 Please consult the Wiki for detailed info about each method exposed by the JPEGDEC class.
 
+Fuzzing:
+--------
+Optional, host-only libFuzzer targets are documented in
+[fuzz/README.md](fuzz/README.md).
+They require an explicit `BUILD_CLANG_FUZZER=ON` build and are not part of the
+normal ESP-IDF or Linux builds.
+
 
 If you find this code useful, please consider becoming a sponsor or sending a donation.
 
