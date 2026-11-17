@@ -1552,15 +1552,19 @@ static int TIFFVALUE(unsigned char *p, int bMotorola)
     return i;
     
 } /* TIFFVALUE() */
-static void GetTIFFInfo(JPEGIMAGE *pPage, int bMotorola, int iOffset)
+// iOffset is the IFD's position in ucFileBuf; iEnd bounds the TIFF data there
+static void GetTIFFInfo(JPEGIMAGE *pPage, int bMotorola, int iOffset, int iEnd)
 {
     int iTag, iTagCount, i;
     uint8_t *cBuf = pPage->ucFileBuf;
     
-    if (iOffset + 2 >= JPEGD_FILE_BUFFER_SIZE) return;
+    if (iOffset < 0 || iOffset > iEnd - 2) // tag count outside the TIFF data
+        return;
     iTagCount = TIFFSHORT(&cBuf[iOffset], bMotorola);  /* Number of tags in this dir */
     if (iTagCount < 1 || iTagCount > 256) // invalid tag count
         return; /* Bad header info */
+    if (iTagCount > (iEnd - iOffset - 2) / 12) // tags run past the TIFF data
+        return;
     /*--- Search the TIFF tags ---*/
     for (i=0; i<iTagCount; i++)
     {
@@ -1868,26 +1872,36 @@ static int JPEGParseInfo(JPEGIMAGE *pPage, int bExtractThumb)
             case 0xffe1: // App1 (EXIF?)
                 if (s[iOffset+2] == 'E' && s[iOffset+3] == 'x' && (s[iOffset+8] == 'M' || s[iOffset+8] == 'I')) // the EXIF data we want
                 {
-                    int bMotorola, IFD, iTagCount;
-                    pPage->iEXIF = iFilePos - iBytesRead + iOffset + 8; // start of TIFF file
+                    int bMotorola, iTagCount;
+                    uint32_t IFD;
+                    int iTIFF = iOffset + 8; // start of the TIFF data in the buffer
+                    int iTIFFEnd = iOffset + usLen; // end of the APP1 segment
+                    if (iTIFFEnd > iBytesRead)
+                        iTIFFEnd = iBytesRead; // only parse what is buffered
+                    pPage->iEXIF = iFilePos - iBytesRead + iTIFF; // start of TIFF file
+                    if (iTIFFEnd - iTIFF < 8) // no room for the TIFF header
+                        break;
                     // Get the orientation value (if present)
-                    bMotorola = (s[iOffset+8] == 'M');
-                    IFD = TIFFLONG(&s[iOffset+12], bMotorola);
-                    iTagCount = TIFFSHORT(&s[iOffset+16], bMotorola);
-                    if (IFD != 0 && (IFD + iOffset + 8) < JPEGD_FILE_BUFFER_SIZE) {
-                        GetTIFFInfo(pPage, bMotorola, IFD+iOffset+8);
-                    }
+                    bMotorola = (s[iTIFF] == 'M');
+                    IFD = TIFFLONG(&s[iTIFF+4], bMotorola);
+                    if (IFD == 0 || IFD > (uint32_t)(iTIFFEnd - iTIFF - 2)) // no first IFD, or outside the segment
+                        break;
+                    iTagCount = TIFFSHORT(&s[iTIFF + IFD], bMotorola);
+                    GetTIFFInfo(pPage, bMotorola, iTIFF + (int)IFD, iTIFFEnd);
                     // The second IFD defines the thumbnail (if present)
                     if (iTagCount >= 1 && iTagCount < 32) // valid number of tags for EXIF data 'page'
                     {
                        // point to next IFD
                         IFD += (12 * iTagCount) + 2;
-                        IFD = TIFFLONG(&s[IFD + iOffset + 8], bMotorola);
-                        if (IFD != 0 && IFD + iOffset + 8 < JPEGD_FILE_BUFFER_SIZE) // Thumbnail present?
+                        if (IFD <= (uint32_t)(iTIFFEnd - iTIFF - 4)) // next-IFD offset is in the segment
                         {
-                            pPage->ucHasThumb = 1;
-                            GetTIFFInfo(pPage, bMotorola, IFD+iOffset+8); // info for second 'page' of TIFF
-                            pPage->iThumbData += iOffset + 8; // absolute offset in the file
+                            IFD = TIFFLONG(&s[iTIFF + IFD], bMotorola);
+                            if (IFD != 0 && IFD <= (uint32_t)(iTIFFEnd - iTIFF - 2)) // Thumbnail present?
+                            {
+                                pPage->ucHasThumb = 1;
+                                GetTIFFInfo(pPage, bMotorola, iTIFF + (int)IFD, iTIFFEnd); // info for second 'page' of TIFF
+                                pPage->iThumbData += iTIFF; // absolute offset in the file
+                            }
                         }
                     }
                 }
