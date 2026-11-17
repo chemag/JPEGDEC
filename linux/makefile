@@ -4,6 +4,7 @@ ASAN_FLAGS=-fsanitize=address -fno-omit-frame-pointer -O1 -g -Werror=vla
 ALIGN_FLAGS=-DNO_SIMD -fsanitize=alignment -fno-sanitize-recover=alignment -fno-omit-frame-pointer -O1 -g
 SHIFT_FLAGS=-fsanitize=shift -fno-sanitize-recover=shift -fno-omit-frame-pointer -O1 -g
 OVERFLOW_FLAGS=-fsanitize=signed-integer-overflow -fno-sanitize-recover=signed-integer-overflow -fno-omit-frame-pointer -O1 -g
+BOUNDS_FLAGS=-fsanitize=bounds -fno-sanitize-recover=bounds -fno-omit-frame-pointer -O1 -g
 LIBS=-lm -lpthread
 
 all: libJPEGDEC.a
@@ -53,6 +54,9 @@ huffman_table_id_test: huffman_table_id_test.o jpegdec_shift.o
 truncated_segment_test: truncated_segment_test.o jpegdec_overflow.o
 	$(CC) $(OVERFLOW_FLAGS) truncated_segment_test.o jpegdec_overflow.o $(LIBS) -o truncated_segment_test
 
+component_count_test: component_count_test.o jpegdec_bounds.o
+	$(CC) $(BOUNDS_FLAGS) component_count_test.o jpegdec_bounds.o $(LIBS) -o component_count_test
+
 c_api_test.o: c_api_test.c ../src/JPEGDEC.h ../test_images/tulips.h
 	$(CC) $(CFLAGS) $(ASAN_FLAGS) -c c_api_test.c
 
@@ -95,6 +99,9 @@ huffman_table_id_test.o: huffman_table_id_test.c ../src/JPEGDEC.h ../test_images
 truncated_segment_test.o: truncated_segment_test.c ../src/JPEGDEC.h
 	$(CC) $(CFLAGS) $(OVERFLOW_FLAGS) -c truncated_segment_test.c
 
+component_count_test.o: component_count_test.c ../src/JPEGDEC.h ../test_images/tulips.h
+	$(CC) $(CFLAGS) $(BOUNDS_FLAGS) -c component_count_test.c
+
 JPEGDEC.o: ../src/JPEGDEC.cpp ../src/JPEGDEC.h
 	$(CXX) $(CFLAGS) -c ../src/JPEGDEC.cpp
 
@@ -116,13 +123,16 @@ jpegdec_shift.o: ../src/jpegdec.c ../src/jpeg.inl ../src/JPEGDEC.h
 jpegdec_overflow.o: ../src/jpegdec.c ../src/jpeg.inl ../src/JPEGDEC.h
 	$(CC) $(CFLAGS) $(OVERFLOW_FLAGS) -c ../src/jpegdec.c -o jpegdec_overflow.o
 
+jpegdec_bounds.o: ../src/jpegdec.c ../src/jpeg.inl ../src/JPEGDEC.h
+	$(CC) $(CFLAGS) $(BOUNDS_FLAGS) -c ../src/jpegdec.c -o jpegdec_bounds.o
+
 jpegdec_no_arduino.o: ../src/jpegdec.c ../src/jpeg.inl ../src/JPEGDEC.h
 	$(CC) $(PORTABLE_FLAGS) -c ../src/jpegdec.c -o jpegdec_no_arduino.o
 
 JPEGDEC_no_arduino.o: ../src/JPEGDEC.cpp ../src/JPEGDEC.h
 	$(CXX) $(PORTABLE_FLAGS) -c ../src/JPEGDEC.cpp -o JPEGDEC_no_arduino.o
 
-test: c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420p_test nv12_test rgb565_endian_test unaligned_read_test unaligned_output_test huffman_shift_test exif_long_test exif_ifd_test huffman_table_id_test truncated_segment_test jpegdec_no_arduino.o JPEGDEC_no_arduino.o
+test: c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420p_test nv12_test rgb565_endian_test unaligned_read_test unaligned_output_test huffman_shift_test exif_long_test exif_ifd_test huffman_table_id_test truncated_segment_test component_count_test jpegdec_no_arduino.o JPEGDEC_no_arduino.o
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./c_api_test
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./cpp_api_test
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./progressive_test
@@ -137,6 +147,7 @@ test: c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420
 	ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 ./exif_ifd_test
 	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./huffman_table_id_test
 	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./truncated_segment_test
+	UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1 ./component_count_test
 
 clean:
-	rm -rf *.o libJPEGDEC.a c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420p_test nv12_test rgb565_endian_test unaligned_read_test unaligned_output_test huffman_shift_test exif_long_test exif_ifd_test huffman_table_id_test truncated_segment_test
+	rm -rf *.o libJPEGDEC.a c_api_test cpp_api_test progressive_test progressive_grayscale_test yuv420p_test nv12_test rgb565_endian_test unaligned_read_test unaligned_output_test huffman_shift_test exif_long_test exif_ifd_test huffman_table_id_test truncated_segment_test component_count_test
