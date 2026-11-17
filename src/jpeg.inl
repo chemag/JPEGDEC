@@ -3341,7 +3341,7 @@ static void JPEGPutMCUGray(JPEGIMAGE *pJPEG, int x, int iPitch)
             if (pJPEG->ucPixelType == JPEGD_PIXEL_RGB8888) {
                 for (j=0; j<4; j++) {
                     pix = (pSrc[0] + pSrc[1] + pSrc[8] + pSrc[9] + 2) >> 2; // average 2x2 block
-                    ulDest[j] = 0xff000000 | (pix * 0x01010101);
+                    ulDest[j] = 0xff000000 | ((uint32_t)pix * 0x01010101);
                     pSrc += 2;
                 }
                 ulDest += iPitch;
@@ -3379,7 +3379,7 @@ static void JPEGPutMCUGray(JPEGIMAGE *pJPEG, int x, int iPitch)
     for (i=0; i<ycount; i++) { // do up to 8 rows
         if (pJPEG->ucPixelType == JPEGD_PIXEL_RGB8888) {
             for (j=0; j<xcount; j++) {
-                *ulDest++ = 0xff000000 + ((uint32_t)*pSrc++ * 0x01010101);
+                *ulDest++ = 0xff000000 | ((uint32_t)*pSrc++ * 0x01010101);
             }
             ulDest -= xcount;
             ulDest += iPitch;

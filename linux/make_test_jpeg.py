@@ -9,6 +9,7 @@ and Huffman tables are copied from test_images/tulips.h.
 
 Usage: make_test_jpeg.py <name> <width> <height> <luma_sampling_hex>
   e.g. make_test_jpeg.py edge_444_image 20 8 11 > edge_444_image.h
+A luma sampling of 0 writes a grayscale image.
 """
 
 import argparse
@@ -120,8 +121,12 @@ def make_jpeg(width, height, luma_sampling):
     dqt = segments(src, 0xDB)
     dht = segments(src, 0xC4)
     tables = huffman_tables(dht)
+    if luma_sampling == 0:  # grayscale: one 1x1 component
+        luma_sampling = 0x11
+        comps = [(1, 0x11, 0, 0)]
+    else:
+        comps = [(1, luma_sampling, 0, 0), (2, 0x11, 1, 1), (3, 0x11, 1, 1)]
     h, v = luma_sampling >> 4, luma_sampling & 15
-    comps = [(1, luma_sampling, 0, 0), (2, 0x11, 1, 1), (3, 0x11, 1, 1)]
     luma = [0] * 64
     luma[0] = 0
     luma[ZIGZAG_VERTICAL_1] = 40
