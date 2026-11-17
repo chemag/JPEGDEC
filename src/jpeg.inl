@@ -5134,8 +5134,8 @@ static void JPEGPutMCU21(JPEGIMAGE *pJPEG, int x, int iPitch)
     }
 // Full size
     /* Convert YCC pixels into RGB pixels and store in output image */
-    if (x + 16 > pJPEG->iWidth) { // slower version with horizontal cropping
-        int iMaxCol = pJPEG->iWidth - x; // how many columns we can draw
+    if (x + 16 > iPitch) { // slower version with horizontal clipping
+        int iMaxCol = iPitch - x; // how many columns fit in the output line
         for (iRow=0; iRow<8; iRow++) { // up to 8 rows to do
             for (iCol=0; iCol<4; iCol++) { // up to 4x2 cols to do
                 iCr = *pCr++; // left block
