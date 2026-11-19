@@ -24,6 +24,7 @@ TESTS += c_api_test
 TESTS += cpp_api_test
 TESTS += progressive_test
 TESTS += yuv420p_test
+TESTS += nv12_test
 
 jpegdec_test_core.o: jpegdec_test_core.c ../src/JPEGDEC.h ../src/jpeg.inl ubsan_ignorelist.txt
 	$(TEST_CC) $(TEST_CFLAGS) -c jpegdec_test_core.c -o $@
