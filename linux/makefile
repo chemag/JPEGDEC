@@ -49,6 +49,7 @@ TESTS += edge_422_test
 TESTS += rgb8888_order_test
 TESTS += crop_area_test
 TESTS += crop_callback_test
+TESTS += crop_scale_test
 
 jpegdec_test_core.o: jpegdec_test_core.c ../src/JPEGDEC.h ../src/jpeg.inl ubsan_ignorelist.txt
 	$(TEST_CC) $(TEST_CFLAGS) -c jpegdec_test_core.c -o $@
