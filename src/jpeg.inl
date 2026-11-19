@@ -2009,7 +2009,7 @@ static int JPEGDecodeMCU_P(JPEGIMAGE *pJPEG, int iMCU, int *iDCPredictor)
     }
 
     iPositive = (1 << pJPEG->cApproxBitsLow); // positive bit position being coded
-    iNegative = ((-1) << pJPEG->cApproxBitsLow); // negative bit position being coded
+    iNegative = -(1 << pJPEG->cApproxBitsLow); // negative bit position being coded
         
     if (pJPEG->iScanStart == 0)
     {
