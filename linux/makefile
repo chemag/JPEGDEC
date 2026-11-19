@@ -34,6 +34,7 @@ TESTS += huffman_table_id_test
 TESTS += truncated_segment_test
 TESTS += unaligned_output_test
 TESTS += exif_ifd_test
+TESTS += component_count_test
 
 jpegdec_test_core.o: jpegdec_test_core.c ../src/JPEGDEC.h ../src/jpeg.inl ubsan_ignorelist.txt
 	$(TEST_CC) $(TEST_CFLAGS) -c jpegdec_test_core.c -o $@
