@@ -37,6 +37,7 @@ TESTS += exif_ifd_test
 TESTS += component_count_test
 TESTS += dqt_length_test
 TESTS += huffman_table_index_test
+TESTS += subsampling_test
 
 jpegdec_test_core.o: jpegdec_test_core.c ../src/JPEGDEC.h ../src/jpeg.inl ubsan_ignorelist.txt
 	$(TEST_CC) $(TEST_CFLAGS) -c jpegdec_test_core.c -o $@
