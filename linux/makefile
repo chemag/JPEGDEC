@@ -21,6 +21,7 @@ TEST_CFLAGS = -DJPEGDEC_NO_ARDUINO -DNO_SIMD -I../src -Wall -O1 -g \
 	-fno-sanitize-recover=all -fsanitize-ignorelist=ubsan_ignorelist.txt
 TESTS =
 TESTS += c_api_test
+TESTS += cpp_api_test
 
 jpegdec_test_core.o: jpegdec_test_core.c ../src/JPEGDEC.h ../src/jpeg.inl ubsan_ignorelist.txt
 	$(TEST_CC) $(TEST_CFLAGS) -c jpegdec_test_core.c -o $@
