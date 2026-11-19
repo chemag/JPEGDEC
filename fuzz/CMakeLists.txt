@@ -27,12 +27,16 @@ target_compile_definitions(jpegdec_fuzz_core PUBLIC JPEGDEC_NO_ARDUINO NO_SIMD)
 target_compile_options(jpegdec_fuzz_core PRIVATE
     ${JPEGDEC_SANITIZERS} ${JPEGDEC_IGNORELIST} -fsanitize=fuzzer-no-link)
 
-foreach(name IN ITEMS header decode yuv)
-  add_executable(jpegdec_${name}_fuzzer jpegdec_${name}_fuzzer.cc)
-  target_compile_features(jpegdec_${name}_fuzzer PRIVATE cxx_std_11)
-  target_compile_options(jpegdec_${name}_fuzzer PRIVATE
+function(jpegdec_add_fuzzer target source core)
+  add_executable(${target} ${source})
+  target_compile_features(${target} PRIVATE cxx_std_11)
+  target_compile_options(${target} PRIVATE
       ${JPEGDEC_SANITIZERS} -fsanitize=fuzzer-no-link -Wall -Wextra -Werror)
-  target_link_options(jpegdec_${name}_fuzzer PRIVATE
-      ${JPEGDEC_SANITIZERS} -fsanitize=fuzzer)
-  target_link_libraries(jpegdec_${name}_fuzzer PRIVATE jpegdec_fuzz_core)
+  target_link_options(${target} PRIVATE ${JPEGDEC_SANITIZERS} -fsanitize=fuzzer)
+  target_link_libraries(${target} PRIVATE ${core})
+endfunction()
+
+foreach(name IN ITEMS header decode yuv)
+  jpegdec_add_fuzzer(jpegdec_${name}_fuzzer jpegdec_${name}_fuzzer.cc
+      jpegdec_fuzz_core)
 endforeach()

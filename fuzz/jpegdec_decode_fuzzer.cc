@@ -45,6 +45,21 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   JPEG_setMaxOutputSize(&image.jpeg,
                            1 + jpegdec_fuzz::Option(data, size, 2) % 8);
 
+  if ((jpegdec_fuzz::Option(data, size, 4) & 1) != 0 && scale == 0 &&
+      jpegdec_test_get_jpeg_type(&image.jpeg) != JPEG_MODE_PROGRESSIVE) {
+    // Crop to a rectangle chosen by four more trailer bytes; the decoder
+    // rounds it to whole MCUs. Crop areas are in source pixels and the
+    // decoder does not map them to scaled output (progressive images always
+    // decode at 1/8 scale), so only unscaled baseline decodes are cropped.
+    const int width = image.jpeg.iWidth;
+    const int height = image.jpeg.iHeight;
+    JPEG_setCropArea(&image.jpeg,
+                        jpegdec_fuzz::Option(data, size, 5) * width / 256,
+                        jpegdec_fuzz::Option(data, size, 6) * height / 256,
+                        1 + jpegdec_fuzz::Option(data, size, 7) * width / 256,
+                        1 + jpegdec_fuzz::Option(data, size, 8) * height / 256);
+  }
+
   std::vector<uint8_t> framebuffer;
   if ((jpegdec_fuzz::Option(data, size, 3) & 1) != 0 && scale == 0) {
     // The framebuffer path writes complete MCU rows. Supply MCU-padded
