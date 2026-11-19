@@ -26,9 +26,13 @@ The three targets exercise the portable C API:
 
 The decoder and harnesses are instrumented with libFuzzer coverage,
 AddressSanitizer, and UndefinedBehaviorSanitizer. UBSan errors are fatal so
-libFuzzer preserves reproducers. `NO_SIMD` selects the portable path used by
-constrained targets; architecture-specific SIMD and C++ wrappers are not
-covered. Deliberate unsigned arithmetic is not treated as undefined behavior.
+libFuzzer preserves reproducers. The one exception is listed in
+`../linux/ubsan_ignorelist.txt`: the signed-overflow check is compiled out of
+`JPEGIDCT()`, whose fixed-point multiplies overflow on corrupt coefficients
+and produce garbage pixels by design. Signed overflow anywhere else stays
+fatal. `NO_SIMD` selects the portable path used by constrained targets;
+architecture-specific SIMD and C++ wrappers are not covered. Deliberate
+unsigned arithmetic is not treated as undefined behavior.
 
 # 2. Explicit build
 
